@@ -1,0 +1,11 @@
+# Overlay for one boot: `dsh --profile web --patch counter/dsh.patch.yml`
+# The package patch leaves `servers` empty. This file points the host row at the local counter.
+# ui-mcp-mgr's client fiber fails on its own and web boot then refuses to mount the chat.
+- id: heddle-apps
+  config:
+    servers:
+      - name: counter
+        transport: stdio
+        command: /Users/russ/projects/fun/dsh-heddle-apps/counter/stdio.sh
+- id: ui-mcp-mgr
+  disabled: true
