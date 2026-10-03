@@ -231,4 +231,4 @@ jobs:
           cache-mode: restore
           cache-epoch: ""
       - name: publish
-        run: sbt 'core/publish; coreJS/publish; heddle/publish; heddleJS/publish; heddleNative/publish; mcpProtocol/publish; mcpProtocolJS/publish; mcpProtocolNative/publish; brotli/publish; brotliJS/publish; brotliNative/publish; mcp/publish; mcpJS/publish; mcpNative/publish; oauth/publish; oauthJS/publish; mcpApps/publish; mcpAppsJS/publish; mcpAppsNative/publish; mcpAppsHost/publish; mcpAppsHostJS/publish; mcpAppsFrame/publish'
+        run: sbt 'core/publish; coreJS/publish'

@@ -184,9 +184,16 @@ lazy val counter = (project in file("counter"))
 
 /** The counter example compiles the sibling heddle checkout when it is on disk. CI has no checkout, so the sources
   * stay empty and this build does not ask sbt to open `../heddle`.
+  *
+  * `DSH_HEDDLE_CHECKOUT=0` forces that CI graph. `zipxWorkflowGenerate` must run that way: loading the sibling writes
+  * heddle's publish tasks into this repo's workflow.
   */
 def counterHeddle(project: Project): Project =
-  if file("../heddle/build.sbt").exists then
+  val checkout =
+    sys.env.get("DSH_HEDDLE_CHECKOUT") match
+      case Some("0") => false
+      case _         => file("../heddle/build.sbt").exists
+  if checkout then
     val view = ProjectRef(file("../heddle"), "appsBrowserView")
     project
       .dependsOn(ProjectRef(file("../heddle"), "appsBrowserShared"))
