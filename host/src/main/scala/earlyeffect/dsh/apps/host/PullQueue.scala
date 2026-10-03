@@ -3,13 +3,15 @@ package earlyeffect.dsh.apps.host
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSName
 
-/** One consumer's async iterator. The two lists are the queue: JS calls `next` on a single thread, so they need no lock. */
+/** One consumer's async iterator. The two lists are the queue: JS calls `next` on a single thread, so they need no
+  * lock.
+  */
 final class PullQueue(onClose: () => Unit):
-  private var incoming: List[js.Any] = Nil
-  private var outgoing: List[js.Any] = Nil
-  private var waiters: List[Waiter] = Nil
+  private var incoming: List[js.Any]                 = Nil
+  private var outgoing: List[js.Any]                 = Nil
+  private var waiters: List[Waiter]                  = Nil
   private var terminal: Option[Either[js.Any, Unit]] = None
-  private var notified = false
+  private var notified                               = false
 
   def offer(value: js.Any): Unit =
     if terminal.isEmpty then
@@ -25,11 +27,11 @@ final class PullQueue(onClose: () => Unit):
   private[host] def take(resolve: js.Function1[js.Object, Unit], reject: js.Function1[js.Any, Unit]): Unit =
     dequeue match
       case Some(value) => resolve(new Yielded(value))
-      case None =>
+      case None        =>
         terminal match
           case Some(Left(error)) => reject(error)
-          case Some(Right(_)) => resolve(new Finished)
-          case None => waiters = Waiter(resolve, reject) :: waiters
+          case Some(Right(_))    => resolve(new Finished)
+          case None              => waiters = Waiter(resolve, reject) :: waiters
 
   private def close(result: Either[js.Any, Unit]): Unit =
     if terminal.isEmpty then
@@ -85,12 +87,14 @@ final class AsyncPull(queue: PullQueue) extends js.Object:
       queue.take(
         (value: js.Object) =>
           resolve(value)
-          (),
+          ()
+        ,
         (error: js.Any) =>
           reject(error)
           (),
       )
     )
+end AsyncPull
 
 final class Yielded(val value: js.Any) extends js.Object:
   val done: Boolean = false

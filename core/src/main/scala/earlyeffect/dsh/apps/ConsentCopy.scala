@@ -18,9 +18,9 @@ object ConsentCopy:
 
   private def shown(value: Json): String =
     value match
-      case Json.Str(text)  => text
-      case Json.Num(n)     => n.toString
-      case Json.Bool(b)    => b.toString
-      case Json.Null       => ""
-      case other           => other.toJson
+      case Json.Str(text) => text
+      case Json.Num(n)    => n.toString
+      case Json.Bool(b)   => b.toString
+      case Json.Null      => ""
+      case other          => other.toJson
 end ConsentCopy

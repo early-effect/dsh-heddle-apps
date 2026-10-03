@@ -8,10 +8,10 @@ import zio.*
 
 /** Why the counter process did not start. */
 enum CounterBoot(val message: String):
-  case View(detail: String) extends CounterBoot(s"counter view is not on the classpath ($detail)")
+  case View(detail: String)                      extends CounterBoot(s"counter view is not on the classpath ($detail)")
   case Mcp(errors: NonEmptyChunk[McpBuildError]) extends CounterBoot(errors.map(_.message).mkString("; "))
   case App(errors: NonEmptyChunk[AppBuildError]) extends CounterBoot(errors.map(_.message).mkString("; "))
-  case Pipe(detail: String) extends CounterBoot(s"stdio failed ($detail)")
+  case Pipe(detail: String)                      extends CounterBoot(s"stdio failed ($detail)")
 
 /** The browser suite's counter, as one MCP server. `inc` stays app-only. `show_counter` is what a model calls. */
 object CounterApp:

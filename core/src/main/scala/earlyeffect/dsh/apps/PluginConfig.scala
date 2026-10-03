@@ -18,8 +18,8 @@ enum RowError(val message: String):
   case Cwd                    extends RowError("stdio cwd is a non-empty path")
 
 enum ConfigError(val message: String):
-  case NotObject                 extends ConfigError("config is a json object")
-  case Servers                   extends ConfigError("servers is an array")
+  case NotObject                         extends ConfigError("config is a json object")
+  case Servers                           extends ConfigError("servers is an array")
   case Row(index: Int, reason: RowError) extends ConfigError(s"servers[$index]: ${reason.message}")
 
 object PluginConfig:
@@ -69,18 +69,18 @@ object PluginConfig:
 
   private def argsOf(obj: Json.Obj): Either[RowError, Chunk[String]] =
     obj.fields.collectFirst { case ("args", value) => value } match
-      case None                => Right(Chunk.empty)
+      case None                  => Right(Chunk.empty)
       case Some(Json.Arr(items)) =>
         items.foldLeft[Either[RowError, Chunk[String]]](Right(Chunk.empty)) {
-          case (Left(err), _)                  => Left(err)
-          case (Right(acc), Json.Str(s))       => Right(acc :+ s)
-          case (Right(_), _)                   => Left(RowError.Args)
+          case (Left(err), _)            => Left(err)
+          case (Right(acc), Json.Str(s)) => Right(acc :+ s)
+          case (Right(_), _)             => Left(RowError.Args)
         }
       case Some(_) => Left(RowError.Args)
 
   private def cwdOf(obj: Json.Obj): Either[RowError, Option[String]] =
     obj.fields.collectFirst { case ("cwd", value) => value } match
-      case None                          => Right(None)
+      case None                                  => Right(None)
       case Some(Json.Str(path)) if path.nonEmpty => Right(Some(path))
-      case Some(_)                       => Left(RowError.Cwd)
+      case Some(_)                               => Left(RowError.Cwd)
 end PluginConfig

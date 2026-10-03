@@ -5,4 +5,3 @@ object GrantCopy:
   def sentence(connect: Set[String]): String =
     if connect.isEmpty then "Asks for no network."
     else s"May connect to ${connect.toList.sorted.mkString(", ")}."
-end GrantCopy

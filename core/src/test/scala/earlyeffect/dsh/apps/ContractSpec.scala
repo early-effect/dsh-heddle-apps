@@ -84,7 +84,7 @@ object ContractSpec extends ZIOSpecDefault:
           |{"name":"boxed","transport":"stdio","command":"java","cwd":"/tmp/counter"}
           |]}""".stripMargin
       )
-      val bad = PluginConfig.parse("""{"servers":[{"name":"has space","transport":"http","url":"http://x"}]}""")
+      val bad  = PluginConfig.parse("""{"servers":[{"name":"has space","transport":"http","url":"http://x"}]}""")
       val bare = PluginConfig.parse("""{"servers":[{"name":"local","transport":"stdio","command":"java","cwd":""}]}""")
       assertTrue(
         ok == Right(
@@ -96,24 +96,23 @@ object ContractSpec extends ZIOSpecDefault:
         ),
         bad == Left(ConfigError.Row(0, RowError.Name(NameError.BadCharacter(' ', 3)))),
         bare == Left(ConfigError.Row(0, RowError.Cwd)),
-      )
-    ,
+      ),
   )
 
   private def textField(json: Json, name: String): Option[String] =
     json match
       case obj: Json.Obj => obj.fields.collectFirst { case (`name`, Json.Str(value)) => value }
-      case _              => None
+      case _             => None
 
   private def arrayField(json: Json, name: String): Option[zio.Chunk[Json]] =
     json match
       case obj: Json.Obj => obj.fields.collectFirst { case (`name`, Json.Arr(items)) => items }
-      case _              => None
+      case _             => None
 
   /** Reads the checkout. The needle is split so this file does not itself match. */
   private object SourceScan:
     private val needle = "to" + "do"
-    private val roots = List(
+    private val roots  = List(
       "core/src",
       "client/src",
       "host/src",
@@ -139,7 +138,7 @@ object ContractSpec extends ZIOSpecDefault:
       if !Files.exists(path) then Nil
       else if Files.isRegularFile(path) then List(path).filter(wanted)
       else
-        val listed = Files.list(path)
+        val listed   = Files.list(path)
         val children =
           try listed.iterator().asScala.toList
           finally listed.close()
@@ -148,7 +147,7 @@ object ContractSpec extends ZIOSpecDefault:
     private def wanted(path: Path): Boolean =
       val name = path.getFileName.toString
       suffixes.exists(name.endsWith) &&
-        !path.iterator().asScala.exists(part => part.toString == "target" || part.toString == "node_modules")
+      !path.iterator().asScala.exists(part => part.toString == "target" || part.toString == "node_modules")
 
     private def lineHits(root: Path, file: Path): List[String] =
       Try(Files.readString(file, StandardCharsets.UTF_8)) match

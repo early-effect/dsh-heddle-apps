@@ -27,16 +27,18 @@ object Plugin:
     if js.typeOf(raw) != "string" then Console.error("dsh-heddle-apps: config is not json")
     else
       PluginConfig.parse(raw) match
-        case Left(err) => Console.error(s"dsh-heddle-apps: ${err.message}")
+        case Left(err)        => Console.error(s"dsh-heddle-apps: ${err.message}")
         case Right(endpoints) =>
           running match
             case Some(existing) => existing.replace(endpoints)
-            case None =>
+            case None           =>
               val bridge = new HostBridge(ctx, endpoints)
               running = Some(bridge)
               locally(ctx.on("loader/volatile-update", value => updated(bridge, value)))
               ctx.effect(() => start(ctx, bridge), "dsh-heddle-apps")
               ()
+    end if
+  end apply
 
   private var running: Option[HostBridge] = None
 
@@ -54,3 +56,4 @@ object Plugin:
     () =>
       dispose()
       bridge.stop()
+end Plugin

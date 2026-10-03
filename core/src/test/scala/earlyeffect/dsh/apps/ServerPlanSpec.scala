@@ -20,7 +20,7 @@ object ServerPlanSpec extends ZIOSpecDefault:
     test("replace keeps an unchanged server, stops a removed one, and starts a new one") {
       val steps = ServerPlan.steps(Chunk(counter, local), Chunk(counter))
       assertTrue(
-        steps == Chunk(ServerPlan.Step.Stop("local"), ServerPlan.Step.Keep(counter)),
+        steps == Chunk(ServerPlan.Step.Stop("local"), ServerPlan.Step.Keep(counter))
       )
     },
     test("a changed url stops the old session and starts the new target") {
@@ -29,7 +29,7 @@ object ServerPlanSpec extends ZIOSpecDefault:
         ServerPlan.steps(Chunk(counter), Chunk(moved)) == Chunk(
           ServerPlan.Step.Stop("counter"),
           ServerPlan.Step.Start(moved),
-        ),
+        )
       )
     },
     test("a failed add is a start beside the servers that stay") {
@@ -38,11 +38,11 @@ object ServerPlanSpec extends ZIOSpecDefault:
         ServerPlan.steps(Chunk(counter), Chunk(counter, added)) == Chunk(
           ServerPlan.Step.Keep(counter),
           ServerPlan.Step.Start(added),
-        ),
+        )
       )
     },
     test("switching transport keeps the hidden draft") {
-      val http = ServerDraft("counter", "http", ServerDraft.exampleUrl, "node", Chunk("srv.js"), "/tmp")
+      val http  = ServerDraft("counter", "http", ServerDraft.exampleUrl, "node", Chunk("srv.js"), "/tmp")
       val stdio = http.show("stdio")
       assertTrue(
         stdio.url == ServerDraft.exampleUrl,
@@ -53,9 +53,9 @@ object ServerPlanSpec extends ZIOSpecDefault:
     },
     test("a blank url and a bad name are the row errors") {
       val blankUrl = ServerDraft("counter", "http", "", "", Chunk.empty, "")
-      val blank = PluginConfig.parse(Json.Obj("servers" -> Json.Arr(blankUrl.row)).toJson)
-      val named = ServerDraft("has space", "http", "http://127.0.0.1:9/mcp", "", Chunk.empty, "")
-      val bad = PluginConfig.parse(Json.Obj("servers" -> Json.Arr(named.row)).toJson)
+      val blank    = PluginConfig.parse(Json.Obj("servers" -> Json.Arr(blankUrl.row)).toJson)
+      val named    = ServerDraft("has space", "http", "http://127.0.0.1:9/mcp", "", Chunk.empty, "")
+      val bad      = PluginConfig.parse(Json.Obj("servers" -> Json.Arr(named.row)).toJson)
       assertTrue(
         blank == Left(ConfigError.Row(0, RowError.Url)),
         bad == Left(ConfigError.Row(0, RowError.Name(NameError.BadCharacter(' ', 3)))),
@@ -63,16 +63,16 @@ object ServerPlanSpec extends ZIOSpecDefault:
     },
     test("stdio args that are not strings, and an empty directory, are the row errors") {
       val args = Json.Obj(
-        "name" -> Json.Str("weather"),
+        "name"      -> Json.Str("weather"),
         "transport" -> Json.Str("stdio"),
-        "command" -> Json.Str("node"),
-        "args" -> Json.Arr(Json.Num(java.math.BigDecimal.ONE)),
+        "command"   -> Json.Str("node"),
+        "args"      -> Json.Arr(Json.Num(java.math.BigDecimal.ONE)),
       )
       val cwd = Json.Obj(
-        "name" -> Json.Str("weather"),
+        "name"      -> Json.Str("weather"),
         "transport" -> Json.Str("stdio"),
-        "command" -> Json.Str("node"),
-        "cwd" -> Json.Str(""),
+        "command"   -> Json.Str("node"),
+        "cwd"       -> Json.Str(""),
       )
       assertTrue(
         PluginConfig.parse(Json.Obj("servers" -> Json.Arr(args)).toJson) ==
@@ -89,7 +89,8 @@ object ServerPlanSpec extends ZIOSpecDefault:
       )
     },
     test("the consent question is the summary and the server, and the arguments are labeled") {
-      val lines = ConsentCopy.lines(Json.Obj("text" -> Json.Str("buy milk"), "n" -> Json.Num(new java.math.BigDecimal(2))))
+      val lines =
+        ConsentCopy.lines(Json.Obj("text" -> Json.Str("buy milk"), "n" -> Json.Num(new java.math.BigDecimal(2))))
       assertTrue(
         ConsentCopy.question(Some("Increment"), "inc", "counter") == "Increment on counter?",
         ConsentCopy.question(None, "inc", "counter") == "inc on counter?",

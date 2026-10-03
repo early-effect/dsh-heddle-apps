@@ -15,7 +15,7 @@ object JsTask:
 
 /** A promise completed from ZIO. The executor runs synchronously, so the callbacks exist before `ok` or `fail`. */
 final class JsGate[A]:
-  private var succeedFn: js.UndefOr[js.Function1[A, Unit]] = js.undefined
+  private var succeedFn: js.UndefOr[js.Function1[A, Unit]]  = js.undefined
   private var rejectFn: js.UndefOr[js.Function1[Any, Unit]] = js.undefined
 
   val promise: js.Promise[A] =
@@ -33,6 +33,7 @@ final class JsGate[A]:
 
   def fail(error: Any): Unit =
     rejectFn.foreach(_(error))
+end JsGate
 
 /** Forks at the JS edge. The fiber is interrupted from the plugin's disposer; nothing here calls `unsafe.run`. */
 object Edge:

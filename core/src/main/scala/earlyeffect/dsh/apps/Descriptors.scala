@@ -3,9 +3,9 @@ package earlyeffect.dsh.apps
 import zio.Chunk
 import zio.json.ast.Json
 
-/** The host Typert contribution: `names` so a web row can claim slots before a call, and `open` so one mounted view
-  * has one stream. Codecs are `src-json`. The web row mounts the same methods with strict codecs, which is what
-  * `$mount` accepts.
+/** The host Typert contribution: `names` so a web row can claim slots before a call, and `open` so one mounted view has
+  * one stream. Codecs are `src-json`. The web row mounts the same methods with strict codecs, which is what `$mount`
+  * accepts.
   */
 object Descriptors:
   val packageName: String = "@early-effect/dsh-heddle-apps"
@@ -39,10 +39,10 @@ object Descriptors:
 
   /** What `ctx.typert.register` takes on the host. */
   val host: Json = Json.Obj(
-    "package"     -> Json.Str(packageName),
-    "face"        -> Json.Str("host"),
-    "schemas"     -> Json.Arr(Chunk.empty),
-    "model"       -> Json.Obj(
+    "package" -> Json.Str(packageName),
+    "face"    -> Json.Str("host"),
+    "schemas" -> Json.Arr(Chunk.empty),
+    "model"   -> Json.Obj(
       "services" -> Json.Arr(Chunk.empty),
       "events"   -> Json.Arr(Chunk.empty),
       "objects"  -> Json.Arr(Chunk.empty),
@@ -68,6 +68,7 @@ object Descriptors:
     ) ++ Chunk.from(Option.when(stream)("mode" -> Json.Str("stream"))) ++
       Chunk.from(Option.when(uplink)("uplink" -> Json.Obj("codec" -> srcJson)))
     Json.Obj(fields)
+  end method
 
   private def parameter(name: String): Json =
     Json.Obj(

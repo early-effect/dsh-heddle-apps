@@ -3,7 +3,8 @@ import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport.*
 
 AppsVersions.settings
 
-// ProjectRef loads heddle's projects into this session. Their libraryDependencies belong to HeddleVersions.
+// Host and frame come from the published heddle snapshot. The counter example still reads the sibling
+// checkout when that build is on disk. CI does not have it, so the counter project is empty there.
 zipxCheckDeps := false
 
 ThisBuild / scalaVersion := (AppsVersions.scala: String)
@@ -90,7 +91,6 @@ lazy val host = (project in file("host"))
   .dependsOn(
     LocalProject("coreJS"),
     facade,
-    ProjectRef(file("../heddle"), "mcpAppsHostJS"),
   )
   .settings(
     name := "dsh-heddle-apps-host",
@@ -98,6 +98,7 @@ lazy val host = (project in file("host"))
     skipTests,
     scalacOptions ++= commonScalacOptions,
     scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.ESModule)),
+    AppsVersions.hostLib,
   )
 
 lazy val webClient = (project in file("client"))
@@ -105,10 +106,10 @@ lazy val webClient = (project in file("client"))
   .dependsOn(
     LocalProject("coreJS"),
     facade,
-    ProjectRef(file("../heddle"), "mcpAppsFrame"),
   )
   .settings(
     name := "dsh-heddle-apps-client",
+    AppsVersions.frameLib,
     skipPublish,
     skipTests,
     scalacOptions ++= commonScalacOptions,
@@ -160,10 +161,8 @@ lazy val heddlePlugin = (project in file("plugin"))
   )
 
 lazy val counterClasspath = taskKey[File]("write counter/target/classpath for counter/stdio.sh")
-lazy val counterView     = ProjectRef(file("../heddle"), "appsBrowserView")
 
 lazy val counter = (project in file("counter"))
-  .dependsOn(ProjectRef(file("../heddle"), "appsBrowserShared"))
   .settings(
     name := "dsh-heddle-apps-counter",
     skipPublish,
@@ -171,12 +170,6 @@ lazy val counter = (project in file("counter"))
     AppsVersions.zioTests,
     testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"),
     Compile / run / fork := true,
-    Compile / resourceGenerators += Def.task {
-      val _    = (counterView / Compile / fastLinkJS).value
-      val dest = (Compile / resourceManaged).value / "counter-view.js"
-      IO.copyFile((counterView / Compile / fastLinkJSOutput).value / "main.js", dest)
-      Seq(dest)
-    }.taskValue,
     counterClasspath := Def.uncached {
       val conv = fileConverter.value
       val cp   = (Compile / fullClasspath).value
@@ -187,3 +180,26 @@ lazy val counter = (project in file("counter"))
       dest
     },
   )
+  .configure(counterHeddle)
+
+/** The counter example compiles the sibling heddle checkout when it is on disk. CI has no checkout, so the sources
+  * stay empty and this build does not ask sbt to open `../heddle`.
+  */
+def counterHeddle(project: Project): Project =
+  if file("../heddle/build.sbt").exists then
+    val view = ProjectRef(file("../heddle"), "appsBrowserView")
+    project
+      .dependsOn(ProjectRef(file("../heddle"), "appsBrowserShared"))
+      .settings(
+        Compile / resourceGenerators += Def.task {
+          val _    = (view / Compile / fastLinkJS).value
+          val dest = (Compile / resourceManaged).value / "counter-view.js"
+          IO.copyFile((view / Compile / fastLinkJSOutput).value / "main.js", dest)
+          Seq(dest)
+        }.taskValue,
+      )
+  else
+    project.settings(
+      Compile / sources := Nil,
+      Test / sources    := Nil,
+    )

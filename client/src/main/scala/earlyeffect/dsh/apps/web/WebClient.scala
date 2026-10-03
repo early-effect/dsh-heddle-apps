@@ -2,11 +2,18 @@ package earlyeffect.dsh.apps.web
 
 import ascent.dom
 import earlyeffect.dsh.apps.{
-  ConsentCopy, Descriptors, DshServer, JsJson, Phase, PluginConfig, Presentation, RowReport, ServerDraft, ServerPlan,
+  ConsentCopy,
+  Descriptors,
+  DshServer,
+  JsJson,
+  Phase,
+  PluginConfig,
+  Presentation,
+  RowReport,
+  ServerDraft,
+  ServerPlan,
 }
-import earlyeffect.dsh.apps.facade.{
-  ClientContext, ConfigViewProps, Console, NamesResult, React, ReactRef, StreamHandle,
-}
+import earlyeffect.dsh.apps.facade.{ClientContext, ConfigViewProps, Console, NamesResult, React, ReactRef, StreamHandle}
 import heddle.mcp.apps.Origin
 import heddle.mcp.apps.frame.{Frame, RelayMode}
 import heddle.mcp.apps.host.{ConsentOutcome, ConsentRequest, FrameEvent}
@@ -21,17 +28,17 @@ import zio.stream.ZStream
 
 final class ServersSlot extends js.Object:
   val name: String = "plugins.row.config"
-  val key: String = "@early-effect/dsh-heddle-apps#heddle-apps"
+  val key: String  = "@early-effect/dsh-heddle-apps#heddle-apps"
 
 /** The web row. It mounts the remote, claims one tool-view slot per public name, and frames that call. */
 object WebClient:
   @JSExportTopLevel("inject")
   val inject: js.Array[String] = js.Array("slots", "remote")
 
-  private val runtime = Runtime.default
+  private val runtime                                                      = Runtime.default
   private var namespace: js.UndefOr[earlyeffect.dsh.apps.facade.Namespace] = js.undefined
-  private var disposeMount: js.UndefOr[js.Function0[js.Any]] = js.undefined
-  private val slots = js.Array[js.Function0[Unit]]()
+  private var disposeMount: js.UndefOr[js.Function0[js.Any]]               = js.undefined
+  private val slots                                                        = js.Array[js.Function0[Unit]]()
 
   @JSExportTopLevel("apply")
   def apply(ctx: ClientContext): Unit =
@@ -56,39 +63,43 @@ object WebClient:
         release()
     ctx.effect(callback, "dsh-heddle-apps")
     ()
+  end apply
 
   private val serversComponent: js.Function1[ConfigViewProps, js.Object] =
     props =>
-      if props.view == "summary" then React.createElement("span", js.undefined, ServerPlan.listed(draftsOf(props).length))
+      if props.view == "summary" then
+        React.createElement("span", js.undefined, ServerPlan.listed(draftsOf(props).length))
       else
-        val host = React.useRef[js.UndefOr[dom.HTMLElement]](js.undefined)
-        val status = formStatus(props)
+        val host     = React.useRef[js.UndefOr[dom.HTMLElement]](js.undefined)
+        val status   = formStatus(props)
         val revision = props.form.toOption.flatMap(_.state.revision.toOption).getOrElse(0.0)
         React.useLayoutEffect(() => mountServers(host, props), js.Array(props.view, status, revision))
         React.createElement("div", new HostProps(host))
 
   private def draftsOf(props: ConfigViewProps): Chunk[ServerDraft] =
-    props.form.toOption.flatMap { form =>
-      form.state.value.toOption.flatMap { section =>
-        val raw = js.JSON.stringify(JsJson.plain(section))
-        if js.typeOf(raw) != "string" then None
-        else PluginConfig.parse(raw).toOption.map(_.map(ServerDraft.from))
+    props.form.toOption
+      .flatMap { form =>
+        form.state.value.toOption.flatMap { section =>
+          val raw = js.JSON.stringify(JsJson.plain(section))
+          if js.typeOf(raw) != "string" then None
+          else PluginConfig.parse(raw).toOption.map(_.map(ServerDraft.from))
+        }
       }
-    }.getOrElse(Chunk.empty)
+      .getOrElse(Chunk.empty)
 
   /** The servers page. Save is the only write. Typing does not rebuild the card, so the cursor stays. */
   private def mountServers(host: ReactRef[js.UndefOr[dom.HTMLElement]], props: ConfigViewProps): js.Function0[Unit] =
     host.current.toOption match
-      case None => () => ()
+      case None         => () => ()
       case Some(parent) =>
-        var drafts = draftsOf(props)
-        var saved = drafts
-        var reports = Chunk.empty[RowReport]
-        var confirming: Option[Int] = None
-        var focusNext = false
-        var plates = Chunk.empty[Plate]
+        var drafts                           = draftsOf(props)
+        var saved                            = drafts
+        var reports                          = Chunk.empty[RowReport]
+        var confirming: Option[Int]          = None
+        var focusNext                        = false
+        var plates                           = Chunk.empty[Plate]
         var summaryNode: Option[dom.Element] = None
-        val root = dom.document.createElement(dom.HtmlTag.div)
+        val root                             = dom.document.createElement(dom.HtmlTag.div)
         root.className = "heddle-servers"
         ServersStyle.install()
         locally(parent.appendChild(root))
@@ -112,11 +123,11 @@ object WebClient:
             case _ => ()
         def askRemove(index: Int): Unit =
           drafts.lift(index) match
-            case None => ()
+            case None        => ()
             case Some(draft) =>
               val connected = reports.find(_.name == draft.name).exists {
                 case RowReport(_, Phase.Up(_, _)) => true
-                case _                             => false
+                case _                            => false
               }
               if draft.fresh || !connected then drop(index)
               else
@@ -142,14 +153,18 @@ object WebClient:
                     }
                     grant.foreach(text => plate.grant.textContent = Some(text))
                   case _ => ()
+              end if
             }
           }
+        end fill
         def paint(): Unit =
           root.textContent = None
           plates = Chunk.empty
           val summary = dom.document.createElement(dom.HtmlTag.p)
           summary.className = "heddle-summary"
-          summary.textContent = Some(if loading(props) && drafts.isEmpty then "Loading the saved servers." else headline(drafts.length, reports))
+          summary.textContent = Some(
+            if loading(props) && drafts.isEmpty then "Loading the saved servers." else headline(drafts.length, reports)
+          )
           summaryNode = Some(summary)
           locally(root.appendChild(summary))
           if drafts.isEmpty && !loading(props) then
@@ -160,14 +175,16 @@ object WebClient:
             locally(root.appendChild(empty))
           var focus: Option[dom.HTMLInputElement] = None
           drafts.zipWithIndex.foreach { (draft, index) =>
-            val pending = confirming.contains(index)
+            val pending                 = confirming.contains(index)
             val (box, plate, nameInput) = serverCard(
               draft,
               index,
               pending,
               edit,
               if pending then drop else askRemove,
-              () => { confirming = None; paint() },
+              () =>
+                confirming = None; paint()
+              ,
               move,
               paint,
             )
@@ -180,21 +197,38 @@ object WebClient:
           locally(root.appendChild(error))
           val actions = dom.document.createElement(dom.HtmlTag.div)
           actions.className = "heddle-row"
-          locally(actions.appendChild(button("Add a server", () =>
-            focusNext = true
-            drafts = drafts :+ ServerDraft.blank
-            paint()
-          )))
-          locally(actions.appendChild(button("Save", () =>
-            saveDrafts(props, drafts, error, () =>
-              saved = drafts.map(_.copy(fresh = false))
-              drafts = saved
-              fill()
+          locally(
+            actions.appendChild(
+              button(
+                "Add a server",
+                () =>
+                  focusNext = true
+                  drafts = drafts :+ ServerDraft.blank
+                  paint(),
+              )
             )
-          )))
+          )
+          locally(
+            actions.appendChild(
+              button(
+                "Save",
+                () =>
+                  saveDrafts(
+                    props,
+                    drafts,
+                    error,
+                    () =>
+                      saved = drafts.map(_.copy(fresh = false))
+                      drafts = saved
+                      fill(),
+                  ),
+              )
+            )
+          )
           locally(root.appendChild(actions))
           focusNext = false
           focus.foreach(_.focus())
+        end paint
         paint()
         def accept(next: Chunk[RowReport]): Unit =
           reports = next
@@ -220,7 +254,7 @@ object WebClient:
     val document = Json.Obj("servers" -> Json.Arr(drafts.map(_.row)))
     PluginConfig.parse(document.toJson) match
       case Left(err) => error.textContent = Some(err.message)
-      case Right(_) =>
+      case Right(_)  =>
         error.textContent = None
         onSaved()
         props.form.toOption.foreach { form =>
@@ -231,6 +265,8 @@ object WebClient:
           )
           locally(form.mutate(js.Array(op), form.state.revision))
         }
+    end match
+  end saveDrafts
 
   private def serverCard(
       draft: ServerDraft,
@@ -249,32 +285,34 @@ object WebClient:
       event =>
         event match
           case key: dom.KeyboardEvent if key.key == "Escape" && draft.fresh => removeAt(index)
-          case _                                                             => ()
-      ,
+          case _                                                            => (),
     )
     val (nameWrap, nameInput) = labeled("Name", draft.name, "Letters, digits, _, and -, at most 32.", None)
-    val nameError = dom.document.createElement(dom.HtmlTag.p)
+    val nameError             = dom.document.createElement(dom.HtmlTag.p)
     nameInput.addEventListener(
       "input",
       _ =>
         edit(index)(_.copy(name = nameInput.value))
         nameError.textContent =
           if nameInput.value.isEmpty then None
-          else DshServer.from(nameInput.value).left.toOption.map(_.message)
-      ,
+          else DshServer.from(nameInput.value).left.toOption.map(_.message),
     )
     locally(box.appendChild(nameWrap))
     nameError.className = "heddle-error"
     locally(box.appendChild(nameError))
     val choice = dom.document.createElement(dom.HtmlTag.div)
     choice.className = "heddle-row"
-    val http = button("HTTP", () =>
-      edit(index)(_.show("http"))
-      paint()
+    val http = button(
+      "HTTP",
+      () =>
+        edit(index)(_.show("http"))
+        paint(),
     )
-    val stdio = button("stdio", () =>
-      edit(index)(_.show("stdio"))
-      paint()
+    val stdio = button(
+      "stdio",
+      () =>
+        edit(index)(_.show("stdio"))
+        paint(),
     )
     http.setAttribute("aria-pressed", if draft.shown == "http" then "true" else "false")
     stdio.setAttribute("aria-pressed", if draft.shown == "stdio" then "true" else "false")
@@ -294,6 +332,7 @@ object WebClient:
         labeled("URL", draft.url, "One process, shared by every client of that server.", Some(ServerDraft.exampleUrl))
       urlInput.addEventListener("input", _ => edit(index)(_.copy(url = urlInput.value)))
       locally(box.appendChild(urlWrap))
+    end if
     val status = dom.document.createElement(dom.HtmlTag.p)
     status.className = "heddle-status"
     val tools = dom.document.createElement(dom.HtmlTag.div)
@@ -315,6 +354,7 @@ object WebClient:
     locally(rowActions.appendChild(button("Move down", () => move(index, 1))))
     locally(box.appendChild(rowActions))
     (box, new Plate(status, tools, grant), nameInput)
+  end serverCard
 
   private def arguments(
       args: Chunk[String],
@@ -322,7 +362,7 @@ object WebClient:
       edit: Int => (ServerDraft => ServerDraft) => Unit,
       paint: () => Unit,
   ): dom.Element =
-    val box = dom.document.createElement(dom.HtmlTag.div)
+    val box   = dom.document.createElement(dom.HtmlTag.div)
     val label = dom.document.createElement(dom.HtmlTag.p)
     label.textContent = Some("Arguments")
     locally(box.appendChild(label))
@@ -334,28 +374,52 @@ object WebClient:
           edit(index) { row =>
             if argIndex >= 0 && argIndex < row.args.length then row.copy(args = row.args.updated(argIndex, input.value))
             else row
-          }
-        ,
+          },
       )
       locally(box.appendChild(wrap))
-      locally(box.appendChild(button("Remove argument", () =>
-        edit(index)(row => row.copy(args = row.args.take(argIndex) ++ row.args.drop(argIndex + 1)))
-        paint()
-      )))
-      locally(box.appendChild(button("Move argument up", () =>
-        shiftArg(index, argIndex, -1, edit)
-        paint()
-      )))
-      locally(box.appendChild(button("Move argument down", () =>
-        shiftArg(index, argIndex, 1, edit)
-        paint()
-      )))
+      locally(
+        box.appendChild(
+          button(
+            "Remove argument",
+            () =>
+              edit(index)(row => row.copy(args = row.args.take(argIndex) ++ row.args.drop(argIndex + 1)))
+              paint(),
+          )
+        )
+      )
+      locally(
+        box.appendChild(
+          button(
+            "Move argument up",
+            () =>
+              shiftArg(index, argIndex, -1, edit)
+              paint(),
+          )
+        )
+      )
+      locally(
+        box.appendChild(
+          button(
+            "Move argument down",
+            () =>
+              shiftArg(index, argIndex, 1, edit)
+              paint(),
+          )
+        )
+      )
     }
-    locally(box.appendChild(button("Add an argument", () =>
-      edit(index)(row => row.copy(args = row.args :+ ""))
-      paint()
-    )))
+    locally(
+      box.appendChild(
+        button(
+          "Add an argument",
+          () =>
+            edit(index)(row => row.copy(args = row.args :+ ""))
+            paint(),
+        )
+      )
+    )
     box
+  end arguments
 
   private def shiftArg(
       index: Int,
@@ -371,6 +435,7 @@ object WebClient:
           row.copy(args = rest.take(to) ++ Chunk(item) ++ rest.drop(to))
         case _ => row
     }
+  end shiftArg
 
   private def labeled(
       label: String,
@@ -389,6 +454,7 @@ object WebClient:
       note.textContent = Some(hint)
       locally(wrap.appendChild(note))
     (wrap, input)
+  end labeled
 
   private def formStatus(props: ConfigViewProps): String =
     props.form.toOption.flatMap(_.state.status.toOption).getOrElse("missing")
@@ -401,7 +467,7 @@ object WebClient:
     else
       val connected = reports.count {
         case RowReport(_, Phase.Up(_, _)) => true
-        case _                             => false
+        case _                            => false
       }
       ServerPlan.summary(total, connected)
 
@@ -418,12 +484,14 @@ object WebClient:
 
   private def pullStatus(use: Chunk[RowReport] => Unit): Unit =
     namespace.toOption match
-      case None => ()
+      case None         => ()
       case Some(remote) =>
-        remote.status().`then`[Unit](
-          (result: js.Any) => statusText(result).flatMap(text => RowReport.read(text).toOption).foreach(use),
-          (_: Any) => (),
-        )
+        remote
+          .status()
+          .`then`[Unit](
+            (result: js.Any) => statusText(result).flatMap(text => RowReport.read(text).toOption).foreach(use),
+            (_: Any) => (),
+          )
 
   /** Typert may hand back the JSON text, or `{ok, value}` around that text or the array. */
   private def statusText(result: js.Any): Option[String] =
@@ -439,6 +507,8 @@ object WebClient:
           }
         case _ => None
       }
+    end if
+  end statusText
 
   private def button(text: String, action: () => Unit): dom.Element =
     val node = dom.document.createElement(dom.HtmlTag.button)
@@ -488,7 +558,7 @@ object WebClient:
       title: String,
   ): js.Function0[Unit] =
     host.current.toOption match
-      case None => () => ()
+      case None         => () => ()
       case Some(parent) =>
         namespace.toOption match
           case None =>
@@ -497,9 +567,9 @@ object WebClient:
           case Some(remote) =>
             mountDock(parent, remote, callId, title)
 
-  /** Standard mode sets `hidden` on a finished tool call. The spacer follows that call out of the hidden ancestor.
-    * The iframe stays on `document.body`. Firefox reloads a sandboxed `srcdoc` iframe when it is reparented, and a
-    * reloaded relay never receives the view again.
+  /** Standard mode sets `hidden` on a finished tool call. The spacer follows that call out of the hidden ancestor. The
+    * iframe stays on `document.body`. Firefox reloads a sandboxed `srcdoc` iframe when it is reparented, and a reloaded
+    * relay never receives the view again.
     */
   private def mountDock(
       parent: dom.HTMLElement,
@@ -516,7 +586,7 @@ object WebClient:
     val opening = dom.document.createElement(dom.HtmlTag.p)
     opening.textContent = Some("Opening")
     val question = dom.document.createElement(dom.HtmlTag.div)
-    val frame = dom.document.createElement(dom.HtmlTag.div)
+    val frame    = dom.document.createElement(dom.HtmlTag.div)
     frame.setAttribute("style", "min-height:360px")
     val dock = dom.document.createElement(dom.HtmlTag.div)
     dock.setAttribute("data-heddle-app", "")
@@ -552,9 +622,9 @@ object WebClient:
       options.subtree = true
       watch.observe(column, options)
     }
-    val boxes = new dom.ResizeObserver((_, _) => if live then sync())
+    val boxes                                 = new dom.ResizeObserver((_, _) => if live then sync())
     val onMove: js.Function1[dom.Event, Unit] = _ => if live then sync()
-    val listenOpts = new dom.AddEventListenerOptions {}
+    val listenOpts                            = new dom.AddEventListenerOptions {}
     listenOpts.capture = true
     def stop(): Unit =
       live = false
@@ -582,7 +652,7 @@ object WebClient:
             () => stop()
           case Right(origin) =>
             val handle = remote.open(callId)
-            val fiber = fork {
+            val fiber  = fork {
               ZIO.scoped {
                 Frame
                   .follow(
@@ -607,6 +677,9 @@ object WebClient:
               stop()
               fork(fiber.interrupt.unit)
               handle.dispose()
+        end match
+    end match
+  end mountDock
 
   private def place(seat: dom.HTMLElement, slot: dom.HTMLElement): Unit =
     if seat.isConnected then
@@ -622,17 +695,16 @@ object WebClient:
   private def covered(node: dom.Node): Boolean =
     def loop(current: Option[dom.Element]): Boolean =
       current match
-        case None => false
+        case None          => false
         case Some(element) => element.hasAttribute("hidden") || loop(element.parentElement)
     loop(node match
       case element: dom.Element => Some(element)
-      case _ => None
-    )
+      case _                    => None)
 
   private def outermostHidden(start: dom.Element): Option[dom.Element] =
     def loop(current: Option[dom.Element], found: Option[dom.Element]): Option[dom.Element] =
       current match
-        case None => found
+        case None          => found
         case Some(element) =>
           val next = if element.hasAttribute("hidden") then Some(element) else found
           loop(element.parentElement, next)
@@ -644,8 +716,8 @@ object WebClient:
   private def parkAfter(parent: dom.Node, hidden: dom.Node, dock: dom.Node): Unit =
     hidden.nextSibling match
       case Some(next) if next eq dock => ()
-      case Some(next) => locally(parent.insertBefore(dock, next))
-      case None => adopt(parent, dock)
+      case Some(next)                 => locally(parent.insertBefore(dock, next))
+      case None                       => adopt(parent, dock)
 
   private def ask(
       question: dom.HTMLElement,
@@ -672,11 +744,11 @@ object WebClient:
             _ =>
               if outcome == ConsentOutcome.Rejected then label.textContent = Some(ConsentCopy.denied)
               fork(uplink(handle)(FrameEvent.Answer(id, outcome)).ignore)
-              if outcome == ConsentOutcome.Rejected then removeButtons(bar) else remove(bar)
-            ,
+              if outcome == ConsentOutcome.Rejected then removeButtons(bar) else remove(bar),
           )
           locally(bar.appendChild(node))
           if focus then node.focus()
+        end button
         button("Allow once", ConsentOutcome.AllowOnce, focus = true)
         button("Allow for this session", ConsentOutcome.AllowForSession, focus = false)
         button("Don't allow", ConsentOutcome.Rejected, focus = false)
@@ -701,9 +773,10 @@ object WebClient:
           else
             result.value.toOption.flatMap(value => decode(value).toOption) match
               case Some(event) => ZIO.succeed(event)
-              case None => ZIO.fail(Some(McpError.Protocol("frame event"))),
+              case None        => ZIO.fail(Some(McpError.Protocol("frame event"))),
       )
     }
+  end incoming
 
   private def mountRef(props: ToolViewProps): Option[earlyeffect.dsh.apps.MountRef] =
     props.block.toOption.flatMap(_.meta.toOption).flatMap { meta =>
@@ -723,9 +796,9 @@ object WebClient:
       case thrown: js.JavaScriptException =>
         thrown.exception match
           case value: js.Error => value.message
-          case other => String.valueOf(other)
+          case other           => String.valueOf(other)
       case value: js.Error => value.message
-      case other => other.getClass.getSimpleName
+      case other           => other.getClass.getSimpleName
 
   /** Leaves the question, which denial has already replaced with "Not allowed." */
   private def removeButtons(bar: dom.Element): Unit =
@@ -738,6 +811,7 @@ object WebClient:
           case None => ()
       else ()
     rest()
+  end removeButtons
 
   private def remove(node: dom.Node): Unit =
     node.parentNode.foreach { parent =>
@@ -751,11 +825,11 @@ object WebClient:
 
   private def eventLabel(event: FrameEvent): String =
     event match
-      case FrameEvent.FromView(heddle.mcp.protocol.Message.Request(_, method, _))      => s"FromView $method"
-      case FrameEvent.FromView(heddle.mcp.protocol.Message.Notification(method, _))    => s"FromView $method"
-      case FrameEvent.FromView(_)                                                      => "FromView"
-      case FrameEvent.Answer(_, outcome)                                               => s"Answer ${outcome.productPrefix}"
-      case other                                                                       => other.productPrefix
+      case FrameEvent.FromView(heddle.mcp.protocol.Message.Request(_, method, _))   => s"FromView $method"
+      case FrameEvent.FromView(heddle.mcp.protocol.Message.Notification(method, _)) => s"FromView $method"
+      case FrameEvent.FromView(_)                                                   => "FromView"
+      case FrameEvent.Answer(_, outcome) => s"Answer ${outcome.productPrefix}"
+      case other                         => other.productPrefix
 
   private def decode(value: js.Any): Either[McpError, FrameEvent] =
     val raw = js.JSON.stringify(value)
@@ -767,19 +841,21 @@ object WebClient:
     json match
       case obj: Json.Obj if srcJson(obj) =>
         js.Dictionary[js.Any](
-          "mode" -> "strict",
+          "mode"       -> "strict",
           "typeSymbol" -> "unknown",
-          "create" -> (() => new AcceptAny),
+          "create"     -> (() => new AcceptAny),
         )
       case obj: Json.Obj =>
         val fields = js.Dictionary.empty[js.Any]
         obj.fields.foreach((key, value) => fields(key) = strict(value))
         fields
       case Json.Arr(items) => js.Array(items.map(strict)*)
-      case other => JsJson.from(other)
+      case other           => JsJson.from(other)
 
   private def srcJson(obj: Json.Obj): Boolean =
-    obj.fields.length == 1 && obj.fields.headOption.exists((key, value) => key == "mode" && value == Json.Str("src-json"))
+    obj.fields.length == 1 && obj.fields.headOption.exists((key, value) =>
+      key == "mode" && value == Json.Str("src-json")
+    )
 end WebClient
 
 /** What a strict codec's `create()` returns. The gateway calls `parse` and keeps the value. */
@@ -819,15 +895,16 @@ private object ServersStyle:
       node.id = "heddle-servers-style"
       node.textContent = Some(css)
       dom.document.head.foreach(head => locally(head.appendChild(node)))
+end ServersStyle
 
 @js.native
 trait ToolViewProps extends js.Object:
-  val toolName: String = js.native
+  val toolName: String             = js.native
   val block: js.UndefOr[ToolBlock] = js.native
 
 @js.native
 trait ToolBlock extends js.Object:
-  val meta: js.UndefOr[js.Any] = js.native
+  val meta: js.UndefOr[js.Any]    = js.native
   val content: js.UndefOr[js.Any] = js.native
 
 object JsPromise:

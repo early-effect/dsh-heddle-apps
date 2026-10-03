@@ -9,11 +9,17 @@ object AppsVersions extends ZipxVersions:
   val zioTestSbt = zio.mod("zio-test-sbt")
   val zioJson    = Lib("dev.zio", "zio-json", "1.1.0")
 
+  val heddle      = Lib("rocks.earlyeffect", "heddle", "0.9.0-SNAPSHOT")
+  val heddleHost  = heddle.mod("heddle-mcp-apps-host")
+  val heddleFrame = heddle.mod("heddle-mcp-apps-frame")
+
   val scalajs  = Plugin("org.scala-js", "sbt-scalajs", "1.22.0")
   val scalafmt = Plugin("org.scalameta", "sbt-scalafmt", "2.6.2")
   val dynverCi = Plugin("rocks.earlyeffect", "sbt-dynver-ci", "0.2.3")
 
   def zioTests = library(zioTest.test, zioTestSbt.test)
+  def hostLib  = library(heddleHost)
+  def frameLib = library(heddleFrame)
   def zioLib   = library(zio)
   def jsonLib  = library(zioJson)
 end AppsVersions

@@ -9,10 +9,10 @@ import zio.json.ast.Json
 final case class MountRef(server: String, ui: String, callId: String, title: Option[String] = None)
 
 enum MetaError(val message: String):
-  case NotObject                 extends MetaError("mount meta is an object")
-  case NoHeddle                  extends MetaError("mount meta has no heddle object")
-  case Field(name: String)       extends MetaError(s"heddle.$name is a non-empty string")
-  case Result                    extends MetaError("the tool value has no result")
+  case NotObject           extends MetaError("mount meta is an object")
+  case NoHeddle            extends MetaError("mount meta has no heddle object")
+  case Field(name: String) extends MetaError(s"heddle.$name is a non-empty string")
+  case Result              extends MetaError("the tool value has no result")
 
 object Presentation:
   def project(ref: MountRef): Json =

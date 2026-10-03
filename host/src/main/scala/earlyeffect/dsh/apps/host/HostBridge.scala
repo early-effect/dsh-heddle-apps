@@ -1,14 +1,34 @@
 package earlyeffect.dsh.apps.host
 
 import earlyeffect.dsh.apps.{
-  Endpoint, GrantCopy, JsJson, MountRef, Phase, PinsPath, Presentation, PublicName, RowReport, ServerPlan, ToolCopy,
+  Endpoint,
+  GrantCopy,
+  JsJson,
+  MountRef,
+  Phase,
+  PinsPath,
+  Presentation,
+  PublicName,
+  RowReport,
+  ServerPlan,
+  ToolCopy,
 }
 import earlyeffect.dsh.apps.facade.{AsyncIter, AsyncSource, CallSelf, PluginContext, ToolRun}
 import heddle.ChildCommand
 import heddle.client.Client
 import heddle.mcp.apps.{Clamp, HostPolicy, Sha256, UiMeta, UiPolicy}
 import heddle.mcp.apps.host.{
-  AppServer, AppsHost, Audit, ConsentMemory, HashPins, HostSettings, Launched, Mount, PinFiles, RemoteFrame, ServerName,
+  AppServer,
+  AppsHost,
+  Audit,
+  ConsentMemory,
+  HashPins,
+  HostSettings,
+  Launched,
+  Mount,
+  PinFiles,
+  RemoteFrame,
+  ServerName,
 }
 import heddle.mcp.apps.ui.HostContext
 import heddle.mcp.client.{McpClient, McpError, McpStdio}
@@ -21,22 +41,22 @@ import zio.stream.ZStream
 
 /** The host row: one Heddle session per configured server, one mounted view per call, one frame stream per view. */
 final class HostBridge(ctx: PluginContext, endpoints: Chunk[Endpoint]):
-  private val gate = new JsGate[Live]
+  private val gate     = new JsGate[Live]
   private val settings = HostSettings(
     Implementation("dsh-heddle-apps", "0.0.0"),
     HostPolicy.open,
     HostContext.empty,
     resourceSubscribe = true,
   )
-  private var failure: Option[HostFailure] = None
-  private var settled = false
+  private var failure: Option[HostFailure]               = None
+  private var settled                                    = false
   private var boot: Option[Fiber.Runtime[Nothing, Unit]] = None
   private var opened: List[Fiber.Runtime[Nothing, Unit]] = Nil
-  private var wanted: Chunk[Endpoint] = endpoints
-  private var rows = Chunk.empty[OpenServer]
-  private var stops = Map.empty[String, Chunk[js.Function0[Unit]]]
-  private var carrier: Option[(Scope, Client)] = None
-  private var reports = Map.empty[String, RowReport]
+  private var wanted: Chunk[Endpoint]                    = endpoints
+  private var rows                                       = Chunk.empty[OpenServer]
+  private var stops                                      = Map.empty[String, Chunk[js.Function0[Unit]]]
+  private var carrier: Option[(Scope, Client)]           = None
+  private var reports                                    = Map.empty[String, RowReport]
 
   val names: js.Function0[js.Promise[js.Array[String]]] =
     () => gate.promise.`then`((live: Live) => live.names)
@@ -53,7 +73,7 @@ final class HostBridge(ctx: PluginContext, endpoints: Chunk[Endpoint]):
     boot = Some(fiber)
 
   def stop(): Unit =
-    val fibers = boot.toList ++ opened
+    val fibers  = boot.toList ++ opened
     val closing = rows
     rows = Chunk.empty
     Edge.fork(ZIO.foreachDiscard(fibers)(_.interrupt) *> ZIO.foreachDiscard(closing)(_.scope.close(Exit.unit)))
@@ -65,7 +85,7 @@ final class HostBridge(ctx: PluginContext, endpoints: Chunk[Endpoint]):
 
   private def program: UIO[Unit] =
     PinsPath.from(NodeEnv.get("DSH_HOME"), NodeEnv.get("HOME")) match
-      case None => ZIO.succeed(fail(HostFailure.NoHome))
+      case None       => ZIO.succeed(fail(HostFailure.NoHome))
       case Some(path) =>
         ZIO
           .scoped {
@@ -91,6 +111,7 @@ final class HostBridge(ctx: PluginContext, endpoints: Chunk[Endpoint]):
         assemble(servers).provideEnvironment(env)
       }
     }
+  end boot
 
   private def connectAll: ZIO[Scope & Client, Nothing, Chunk[AppServer]] =
     for
@@ -108,14 +129,14 @@ final class HostBridge(ctx: PluginContext, endpoints: Chunk[Endpoint]):
   private def reconfigure(next: Chunk[Endpoint]): UIO[Unit] =
     val plan = ServerPlan.steps(rows.map(_.endpoint), next)
     ZIO.foreachDiscard(plan) {
-      case ServerPlan.Step.Keep(_)          => ZIO.unit
-      case ServerPlan.Step.Stop(name)       => stopRow(name)
-      case ServerPlan.Step.Start(endpoint)  => startRow(endpoint)
+      case ServerPlan.Step.Keep(_)         => ZIO.unit
+      case ServerPlan.Step.Stop(name)      => stopRow(name)
+      case ServerPlan.Step.Start(endpoint) => startRow(endpoint)
     }
 
   private def stopRow(name: String): UIO[Unit] =
     rows.find(row => ServerPlan.nameOf(row.endpoint) == name) match
-      case None => ZIO.unit
+      case None      => ZIO.unit
       case Some(row) =>
         rows = rows.filterNot(held => ServerPlan.nameOf(held.endpoint) == name)
         reports = reports.removed(name)
@@ -125,7 +146,7 @@ final class HostBridge(ctx: PluginContext, endpoints: Chunk[Endpoint]):
 
   private def startRow(endpoint: Endpoint): UIO[Unit] =
     carrier match
-      case None => ZIO.logWarning("dsh-heddle-apps: the host is not connected").unit
+      case None                  => ZIO.logWarning("dsh-heddle-apps: the host is not connected").unit
       case Some((scope, client)) =>
         openRow(endpoint).provideEnvironment(ZEnvironment(scope).add(client)).flatMap {
           case None         => ZIO.unit
@@ -148,10 +169,12 @@ final class HostBridge(ctx: PluginContext, endpoints: Chunk[Endpoint]):
         case Right(live) =>
           for
             described <- describe(live)
-            _ <- live.session.notifications.foreach {
-              case Message.Notification(Notifications.ToolsListChanged, _) => refresh(live)
-              case _                                                       => ZIO.unit
-            }.forkIn(child)
+            _         <- live.session.notifications
+              .foreach {
+                case Message.Notification(Notifications.ToolsListChanged, _) => refresh(live)
+                case _                                                       => ZIO.unit
+              }
+              .forkIn(child)
             _ <- ZIO.logInfo(s"dsh-heddle-apps: connected ${live.name.value}")
             _ <- ZIO.succeed {
               rows = rows :+ OpenServer(endpoint, live, child, described.titles)
@@ -159,6 +182,8 @@ final class HostBridge(ctx: PluginContext, endpoints: Chunk[Endpoint]):
             }
           yield Some(live)
     yield server
+    end for
+  end openRow
 
   private def refresh(server: AppServer): UIO[Unit] =
     val name = server.name.value
@@ -172,6 +197,7 @@ final class HostBridge(ctx: PluginContext, endpoints: Chunk[Endpoint]):
           reports = reports.updated(name, RowReport(name, Phase.Up(described.lines, described.grant)))
         }
       }
+  end refresh
 
   private def reported: Chunk[RowReport] =
     wanted.map { endpoint =>
@@ -187,7 +213,7 @@ final class HostBridge(ctx: PluginContext, endpoints: Chunk[Endpoint]):
       grant     <- grantOf(server, resources)
     yield
       val titles = resources.map(resource => resource.uri -> HostBridge.shownTitle(resource)).toMap
-      val lines = tools.flatMap { tool =>
+      val lines  = tools.flatMap { tool =>
         val (ui, _) = UiMeta.decodeTool(tool.meta)
         if ui.resourceUri.isDefined && ui.visibility.model then Chunk(HostBridge.toolLine(tool)) else Chunk.empty
       }
@@ -200,19 +226,22 @@ final class HostBridge(ctx: PluginContext, endpoints: Chunk[Endpoint]):
     else
       ZIO
         .foldLeft(apps)((false, Set.empty[String])) { case ((seen, origins), resource) =>
-          server.session.readResource(resource.uri).foldZIO(
-            _ => ZIO.succeed((seen, origins)),
-            contents =>
-              contents.find(_.uri == resource.uri) match
-                case None => ZIO.succeed((seen, origins))
-                case Some(content) =>
-                  val (ask, _) = UiMeta.decodeResource(content.meta)
-                  val effective = Clamp[UiPolicy, HostPolicy].clamp(ask, HostPolicy.open)
-                  ZIO.succeed((true, origins ++ effective.network.connect.map(_.render)))
-              ,
-          )
+          server.session
+            .readResource(resource.uri)
+            .foldZIO(
+              _ => ZIO.succeed((seen, origins)),
+              contents =>
+                contents.find(_.uri == resource.uri) match
+                  case None          => ZIO.succeed((seen, origins))
+                  case Some(content) =>
+                    val (ask, _)  = UiMeta.decodeResource(content.meta)
+                    val effective = Clamp[UiPolicy, HostPolicy].clamp(ask, HostPolicy.open)
+                    ZIO.succeed((true, origins ++ effective.network.connect.map(_.render))),
+            )
         }
         .map((seen, origins) => if seen then Some(GrantCopy.sentence(origins)) else None)
+    end if
+  end grantOf
 
   private def connect(endpoint: Endpoint): ZIO[Scope & Client, McpError, AppServer] =
     val mcp = McpClient.Settings(
@@ -220,23 +249,26 @@ final class HostBridge(ctx: PluginContext, endpoints: Chunk[Endpoint]):
       handshake = McpClient.Handshake.Session,
     )
     val session = endpoint match
-      case Endpoint.Http(_, url) => McpClient.http(url, mcp)
+      case Endpoint.Http(_, url)                 => McpClient.http(url, mcp)
       case Endpoint.Stdio(_, command, args, cwd) =>
         McpStdio.spawn(ChildCommand(command, args, cwd = cwd), mcp)
     session.flatMap { live =>
-      ZIO.fromEither(ServerName.from(HostBridge.endpointName(endpoint))).mapBoth(
-        err => McpError.Protocol(err.message),
-        name => AppServer(name, live),
-      )
+      ZIO
+        .fromEither(ServerName.from(HostBridge.endpointName(endpoint)))
+        .mapBoth(
+          err => McpError.Protocol(err.message),
+          name => AppServer(name, live),
+        )
     }
+  end connect
 
   private def assemble(servers: Chunk[AppServer]): URIO[AppsHost & HashPins & ConsentMemory & Audit, Parts] =
     for
-      host <- ZIO.service[AppsHost]
-      pins <- ZIO.service[HashPins]
-      memory <- ZIO.service[ConsentMemory]
-      audit <- ZIO.service[Audit]
-      mounts <- Ref.make(Map.empty[String, Mount])
+      host       <- ZIO.service[AppsHost]
+      pins       <- ZIO.service[HashPins]
+      memory     <- ZIO.service[ConsentMemory]
+      audit      <- ZIO.service[Audit]
+      mounts     <- Ref.make(Map.empty[String, Mount])
       registered <- register(servers)
     yield Parts(registered, host, mounts, pins, memory, audit)
 
@@ -266,13 +298,16 @@ final class HostBridge(ctx: PluginContext, endpoints: Chunk[Endpoint]):
       output = new ToolOutput(JsJson.from(Presentation.schema), render, presentationMeta),
       execute = (args, exec) => run(server, tool, ui, args, exec),
     )
-    ZIO.attempt(ctx.tools.register(definition)).foldZIO(
-      err => ZIO.logWarning(s"dsh-heddle-apps: did not register $public: ${HostBridge.detail(err)}").as(false),
-      dispose =>
-        val name = server.name.value
-        stops = stops.updated(name, stops.getOrElse(name, Chunk.empty) :+ dispose)
-        ZIO.logInfo(s"dsh-heddle-apps: registered $public").as(true),
-    )
+    ZIO
+      .attempt(ctx.tools.register(definition))
+      .foldZIO(
+        err => ZIO.logWarning(s"dsh-heddle-apps: did not register $public: ${HostBridge.detail(err)}").as(false),
+        dispose =>
+          val name = server.name.value
+          stops = stops.updated(name, stops.getOrElse(name, Chunk.empty) :+ dispose)
+          ZIO.logInfo(s"dsh-heddle-apps: registered $public").as(true),
+      )
+  end registerTool
 
   private def run(server: AppServer, tool: Tool, ui: String, args: js.Any, exec: ToolRun): js.Promise[js.Any] =
     new js.Promise[js.Any]((resolve, reject) =>
@@ -287,11 +322,11 @@ final class HostBridge(ctx: PluginContext, endpoints: Chunk[Endpoint]):
 
   private def execute(server: AppServer, tool: Tool, ui: String, args: js.Any, exec: ToolRun): IO[HostFailure, js.Any] =
     for
-      live <- awaitLive()
-      input <- HostBridge.arguments(args)
+      live   <- awaitLive()
+      input  <- HostBridge.arguments(args)
       result <- server.session.callTool(tool.name, input).mapError(err => HostFailure.Tool(server.name.value, err))
       launched = Launched(tool.name, input, result)
-      title = rows.find(_.server.name == server.name).flatMap(_.titles.get(ui))
+      title    = rows.find(_.server.name == server.name).flatMap(_.titles.get(ui))
       mount <- live.host
         .mount(server, launched)
         .mapError(HostFailure.Mount(_))
@@ -302,19 +337,20 @@ final class HostBridge(ctx: PluginContext, endpoints: Chunk[Endpoint]):
 
   private def openStream(self: CallSelf, callId: String): AsyncPull =
     var waiterFiber: Option[Fiber.Runtime[Nothing, Unit]] = None
-    var serveFiber: Option[Fiber.Runtime[Nothing, Unit]] = None
-    val pull = new PullQueue(() =>
+    var serveFiber: Option[Fiber.Runtime[Nothing, Unit]]  = None
+    val pull                                              = new PullQueue(() =>
       waiterFiber.foreach(fiber => Edge.fork(fiber.interrupt.unit))
       serveFiber.foreach(fiber => Edge.fork(fiber.interrupt.unit))
     )
     uplink(self) match
-      case None => pull.fail(new js.Error(HostFailure.Protocol.message))
+      case None         => pull.fail(new js.Error(HostFailure.Protocol.message))
       case Some(source) =>
         val iterator = source.asyncIterator()
-        val waiter = Edge.fork(watch(callId, pull, iterator, fiber => serveFiber = Some(fiber)))
+        val waiter   = Edge.fork(watch(callId, pull, iterator, fiber => serveFiber = Some(fiber)))
         waiterFiber = Some(waiter)
         opened = waiter :: opened
     pull.iterable
+  end openStream
 
   private def watch(
       callId: String,
@@ -327,7 +363,7 @@ final class HostBridge(ctx: PluginContext, endpoints: Chunk[Endpoint]):
       live =>
         live.mounts.get.flatMap { table =>
           table.get(callId) match
-            case None => ZIO.succeed(pull.fail(new js.Error(HostFailure.MissingMount(callId).message)))
+            case None        => ZIO.succeed(pull.fail(new js.Error(HostFailure.MissingMount(callId).message)))
             case Some(mount) =>
               served(live, mount, pull, iterator)
                 .foldZIO(
@@ -377,7 +413,9 @@ final class HostBridge(ctx: PluginContext, endpoints: Chunk[Endpoint]):
                   case Right(event) =>
                     ZIO.logInfo(s"dsh-heddle-apps: uplink ${event.productPrefix}") *> ZIO.succeed(event)
                   case Left(err) =>
-                    ZIO.logWarning(s"dsh-heddle-apps: uplink did not decode: ${err.message} ${HostBridge.snippet(value)}") *>
+                    ZIO.logWarning(
+                      s"dsh-heddle-apps: uplink did not decode: ${err.message} ${HostBridge.snippet(value)}"
+                    ) *>
                       ZIO.fail(Some(err)),
       )
     }
@@ -416,7 +454,7 @@ final class HostBridge(ctx: PluginContext, endpoints: Chunk[Endpoint]):
     (_, value) =>
       HostBridge.readMounted(value) match
         case Some((ref, _)) => JsJson.from(Presentation.project(ref))
-        case None => js.Dynamic.literal()
+        case None           => js.Dynamic.literal()
 end HostBridge
 
 object HostBridge:
@@ -428,15 +466,14 @@ object HostBridge:
 
   private def endpointName(endpoint: Endpoint): String =
     endpoint match
-      case Endpoint.Http(name, _) => name
+      case Endpoint.Http(name, _)        => name
       case Endpoint.Stdio(name, _, _, _) => name
 
   private def hash12(raw: String): String =
     Sha256.hex(Chunk.fromArray(raw.getBytes("UTF-8"))).take(12)
 
   private def parametersOf(schema: Json.Obj): Json =
-    if schema.fields.isEmpty then
-      Json.Obj("type" -> Json.Str("object"), "additionalProperties" -> Json.Bool(true))
+    if schema.fields.isEmpty then Json.Obj("type" -> Json.Str("object"), "additionalProperties" -> Json.Bool(true))
     else schema
 
   private def arguments(raw: js.Any): IO[HostFailure, Json.Obj] =
@@ -445,7 +482,7 @@ object HostBridge:
       else
         ZIO.fromEither(text.fromJson[Json].left.map(_ => HostFailure.Arguments)).flatMap {
           case obj: Json.Obj => ZIO.succeed(obj)
-          case _ => ZIO.fail(HostFailure.Arguments)
+          case _             => ZIO.fail(HostFailure.Arguments)
         }
     }
 
@@ -455,7 +492,7 @@ object HostBridge:
   private def resultJson(result: CallToolResult): Json =
     result.structuredContent match
       case Some(obj) => obj
-      case None =>
+      case None      =>
         Json.Obj(
           "content" -> Json.Arr(result.content.map(_.toJsonAST).collect { case Right(json) => json }),
           "isError" -> Json.Bool(result.failed),
@@ -469,7 +506,7 @@ object HostBridge:
   private def rendered(value: js.Any): String =
     readMounted(value) match
       case Some((_, result)) => result.toJson
-      case None =>
+      case None              =>
         val raw = js.JSON.stringify(value)
         if js.typeOf(raw) == "string" then raw else ""
 
@@ -487,7 +524,7 @@ object HostBridge:
       case thrown: js.JavaScriptException =>
         thrown.exception match
           case error: js.Error => error.message
-          case other => other.getClass.getSimpleName
+          case other           => other.getClass.getSimpleName
       case other => other.getClass.getSimpleName
 end HostBridge
 

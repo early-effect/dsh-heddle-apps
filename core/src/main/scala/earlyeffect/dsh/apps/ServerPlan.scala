@@ -23,14 +23,15 @@ object ServerPlan:
 
   def nameOf(endpoint: Endpoint): String =
     endpoint match
-      case Endpoint.Http(name, _)       => name
+      case Endpoint.Http(name, _)        => name
       case Endpoint.Stdio(name, _, _, _) => name
 
   /** Stops first, then the next list in order. A changed target is a stop and a start, so the old session ends. */
   def steps(current: Chunk[Endpoint], next: Chunk[Endpoint]): Chunk[Step] =
-    val byName = current.foldLeft(Map.empty[String, Endpoint])((acc, endpoint) => acc.updated(nameOf(endpoint), endpoint))
+    val byName =
+      current.foldLeft(Map.empty[String, Endpoint])((acc, endpoint) => acc.updated(nameOf(endpoint), endpoint))
     val nextNames = next.map(nameOf).toSet
-    val removed = current.collect {
+    val removed   = current.collect {
       case endpoint if !nextNames.contains(nameOf(endpoint)) => Step.Stop(nameOf(endpoint))
     }
     val changed = next.collect {
@@ -42,4 +43,5 @@ object ServerPlan:
         case _                            => Step.Start(endpoint)
     }
     removed ++ changed ++ forward
+  end steps
 end ServerPlan

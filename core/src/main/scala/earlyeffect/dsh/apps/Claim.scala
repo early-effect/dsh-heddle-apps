@@ -11,7 +11,7 @@ object Claim:
   def of(resourceUri: Option[String]): Claim =
     resourceUri match
       case Some(uri) if ui(uri) => Claim.Linked(uri)
-      case _                     => Claim.Plain
+      case _                    => Claim.Plain
 
   private def ui(uri: String): Boolean =
     uri.startsWith("ui://") && uri.length > "ui://".length && !uri.exists(c => c.isWhitespace || c == '#')

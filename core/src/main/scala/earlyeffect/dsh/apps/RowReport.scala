@@ -20,11 +20,11 @@ final case class RowReport(name: String, phase: Phase)
 object RowReport:
   def status(phase: Phase): String =
     phase match
-      case Phase.Connecting              => "Connecting."
-      case Phase.Down(message)           => s"Can't reach the server. $message"
-      case Phase.Up(tools, _) if tools.isEmpty => "Connected. No apps to open."
+      case Phase.Connecting                        => "Connecting."
+      case Phase.Down(message)                     => s"Can't reach the server. $message"
+      case Phase.Up(tools, _) if tools.isEmpty     => "Connected. No apps to open."
       case Phase.Up(tools, _) if tools.length == 1 => "Connected, 1 tool."
-      case Phase.Up(tools, _)            => s"Connected, ${tools.length} tools."
+      case Phase.Up(tools, _)                      => s"Connected, ${tools.length} tools."
 
   /** An unsaved edit keeps the last live sentence and says it is not what is running. */
   def edited(live: String): String = s"Not live yet. $live"
@@ -37,15 +37,15 @@ object RowReport:
     text.fromJson[Json] match
       case Right(Json.Arr(items)) =>
         items.foldLeft[Either[ReportError, Chunk[RowReport]]](Right(Chunk.empty)) {
-          case (Left(err), _)    => Left(err)
+          case (Left(err), _)     => Left(err)
           case (Right(acc), item) => one(item).map(acc :+ _)
         }
       case _ => Left(ReportError.NotArray)
 
   private def wire(report: RowReport): Json =
     val (phase, detail, tools, grant) = report.phase match
-      case Phase.Connecting => ("connecting", "", Chunk.empty[String], None)
-      case Phase.Down(message) => ("down", message, Chunk.empty[String], None)
+      case Phase.Connecting       => ("connecting", "", Chunk.empty[String], None)
+      case Phase.Down(message)    => ("down", message, Chunk.empty[String], None)
       case Phase.Up(tools, grant) => ("up", "", tools, grant)
     val fields = Chunk(
       "name"   -> Json.Str(report.name),
@@ -54,15 +54,16 @@ object RowReport:
       "tools"  -> Json.Arr(tools.map(Json.Str(_))),
     ) ++ grant.map(text => "grant" -> Json.Str(text))
     Json.Obj(fields)
+  end wire
 
   private def one(json: Json): Either[ReportError, RowReport] =
     json match
       case obj: Json.Obj =>
-        val name = text(obj, "name")
+        val name  = text(obj, "name")
         val phase = text(obj, "phase")
         (name, phase) match
           case (Some(name), Some("connecting")) => Right(RowReport(name, Phase.Connecting))
-          case (Some(name), Some("down")) =>
+          case (Some(name), Some("down"))       =>
             Right(RowReport(name, Phase.Down(text(obj, "detail").getOrElse(""))))
           case (Some(name), Some("up")) =>
             Right(RowReport(name, Phase.Up(strings(obj, "tools"), text(obj, "grant"))))

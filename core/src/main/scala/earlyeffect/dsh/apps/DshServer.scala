@@ -2,7 +2,7 @@ package earlyeffect.dsh.apps
 
 /** A server name `dsh-mcp-client` would accept: 1 to 32 of `[A-Za-z0-9_-]`. */
 enum NameError(val message: String):
-  case Empty extends NameError("a server name is not empty")
+  case Empty                extends NameError("a server name is not empty")
   case TooLong(length: Int) extends NameError(s"a server name is at most ${DshServer.Max} characters, not $length")
   case BadCharacter(char: Char, at: Int)
       extends NameError(s"'$char' at $at: a server name is letters, digits, '_', and '-'")
