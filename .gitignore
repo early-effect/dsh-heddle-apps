@@ -1,0 +1,13 @@
+target/
+project/project/
+project/target/
+.bsp/
+.bloop/
+.metals/
+metals.sbt
+*.semanticdb
+.sbt/
+.DS_Store
+node_modules/
+plugin/lib/
+plugin/client.js
