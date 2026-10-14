@@ -7,6 +7,11 @@ AppsVersions.settings
 // checkout when that build is on disk. CI does not have it, so the counter project is empty there.
 zipxCheckDeps := false
 
+// Tag or dispatch deploys the site. The reusable workflow sets SPECULAR_STRIP_CI, which only
+// strips a trailing -ci. There is no published tag, so the site blanks the build version.
+zipxWorkflowDispatch := true
+zipxCapabilities += ZipxDocs.pages().andCondition(JobCondition.repositoryIs("early-effect/dsh-heddle-apps"))
+
 ThisBuild / scalaVersion := (AppsVersions.scala: String)
 ThisBuild / organization := "rocks.earlyeffect"
 

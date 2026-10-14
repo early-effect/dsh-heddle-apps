@@ -17,9 +17,18 @@ object AppsVersions extends ZipxVersions:
   val scalafmt = Plugin("org.scalameta", "sbt-scalafmt", "2.6.2")
   val dynverCi = Plugin("rocks.earlyeffect", "sbt-dynver-ci", "0.2.3")
 
+  /** Docs only. This repo is not a library, and these rows are not an install coordinate. */
+  val specular        = Lib("rocks.earlyeffect", "specular-core", "0.20.0")
+  val specularZioTest = specular.mod("specular-zio-test").test
+  val specularSite    = specular.mod("specular-site")
+  val specularTheme   = specular.mod("early-effect-docs-theme")
+  val mermoid         = Lib("rocks.earlyeffect", "mermoid", "0.2.0")
+  val specularPlugin  = Plugin("rocks.earlyeffect", "sbt-specular", "0.20.0")
+
   def zioTests = library(zioTest.test, zioTestSbt.test)
   def hostLib  = library(heddleHost)
   def frameLib = library(heddleFrame)
   def zioLib   = library(zio)
   def jsonLib  = library(zioJson)
+  def docsLib  = library(specular, specularSite, specularTheme, mermoid, specularZioTest)
 end AppsVersions
