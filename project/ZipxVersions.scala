@@ -1,7 +1,7 @@
 import zipx.*
 
 object AppsVersions extends ZipxVersions:
-  val sbt: SbtVersion     = SbtVersion("2.1.0-M3")
+  val sbt: SbtVersion     = SbtVersion("2.1.0-RC1")
   val scala: ScalaVersion = ScalaVersion("3.9.0")
 
   val zio        = Lib("dev.zio", "zio", "2.1.26")
@@ -9,7 +9,7 @@ object AppsVersions extends ZipxVersions:
   val zioTestSbt = zio.mod("zio-test-sbt")
   val zioJson    = Lib("dev.zio", "zio-json", "1.1.0")
 
-  val heddle      = Lib("rocks.earlyeffect", "heddle", "0.9.0-6d468f16f6ee-SNAPSHOT")
+  val heddle      = Lib("rocks.earlyeffect", "heddle", "0.11.0")
   val heddleHost  = heddle.mod("heddle-mcp-apps-host")
   val heddleFrame = heddle.mod("heddle-mcp-apps-frame")
 
