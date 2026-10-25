@@ -111,7 +111,6 @@ final class HostBridge(ctx: PluginContext, endpoints: Chunk[Endpoint]):
         assemble(servers).provideEnvironment(env)
       }
     }
-  end boot
 
   private def connectAll: ZIO[Scope & Client, Nothing, Chunk[AppServer]] =
     for
@@ -182,8 +181,6 @@ final class HostBridge(ctx: PluginContext, endpoints: Chunk[Endpoint]):
             }
           yield Some(live)
     yield server
-    end for
-  end openRow
 
   private def refresh(server: AppServer): UIO[Unit] =
     val name = server.name.value
@@ -197,7 +194,6 @@ final class HostBridge(ctx: PluginContext, endpoints: Chunk[Endpoint]):
           reports = reports.updated(name, RowReport(name, Phase.Up(described.lines, described.grant)))
         }
       }
-  end refresh
 
   private def reported: Chunk[RowReport] =
     wanted.map { endpoint =>
@@ -240,8 +236,6 @@ final class HostBridge(ctx: PluginContext, endpoints: Chunk[Endpoint]):
             )
         }
         .map((seen, origins) => if seen then Some(GrantCopy.sentence(origins)) else None)
-    end if
-  end grantOf
 
   private def connect(endpoint: Endpoint): ZIO[Scope & Client, McpError, AppServer] =
     val mcp = McpClient.Settings(
@@ -260,7 +254,6 @@ final class HostBridge(ctx: PluginContext, endpoints: Chunk[Endpoint]):
           name => AppServer(name, live),
         )
     }
-  end connect
 
   private def assemble(servers: Chunk[AppServer]): URIO[AppsHost & HashPins & ConsentMemory & Audit, Parts] =
     for
@@ -307,7 +300,6 @@ final class HostBridge(ctx: PluginContext, endpoints: Chunk[Endpoint]):
           stops = stops.updated(name, stops.getOrElse(name, Chunk.empty) :+ dispose)
           ZIO.logInfo(s"dsh-heddle-apps: registered $public").as(true),
       )
-  end registerTool
 
   private def run(server: AppServer, tool: Tool, ui: String, args: js.Any, exec: ToolRun): js.Promise[js.Any] =
     new js.Promise[js.Any]((resolve, reject) =>
@@ -350,7 +342,6 @@ final class HostBridge(ctx: PluginContext, endpoints: Chunk[Endpoint]):
         waiterFiber = Some(waiter)
         opened = waiter :: opened
     pull.iterable
-  end openStream
 
   private def watch(
       callId: String,

@@ -43,5 +43,4 @@ object ServerPlan:
         case _                            => Step.Start(endpoint)
     }
     removed ++ changed ++ forward
-  end steps
 end ServerPlan

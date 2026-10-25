@@ -63,7 +63,6 @@ object WebClient:
         release()
     ctx.effect(callback, "dsh-heddle-apps")
     ()
-  end apply
 
   private val serversComponent: js.Function1[ConfigViewProps, js.Object] =
     props =>
@@ -153,10 +152,8 @@ object WebClient:
                     }
                     grant.foreach(text => plate.grant.textContent = Some(text))
                   case _ => ()
-              end if
             }
           }
-        end fill
         def paint(): Unit =
           root.textContent = None
           plates = Chunk.empty
@@ -228,7 +225,6 @@ object WebClient:
           locally(root.appendChild(actions))
           focusNext = false
           focus.foreach(_.focus())
-        end paint
         paint()
         def accept(next: Chunk[RowReport]): Unit =
           reports = next
@@ -265,8 +261,6 @@ object WebClient:
           )
           locally(form.mutate(js.Array(op), form.state.revision))
         }
-    end match
-  end saveDrafts
 
   private def serverCard(
       draft: ServerDraft,
@@ -332,7 +326,6 @@ object WebClient:
         labeled("URL", draft.url, "One process, shared by every client of that server.", Some(ServerDraft.exampleUrl))
       urlInput.addEventListener("input", _ => edit(index)(_.copy(url = urlInput.value)))
       locally(box.appendChild(urlWrap))
-    end if
     val status = dom.document.createElement(dom.HtmlTag.p)
     status.className = "heddle-status"
     val tools = dom.document.createElement(dom.HtmlTag.div)
@@ -354,7 +347,6 @@ object WebClient:
     locally(rowActions.appendChild(button("Move down", () => move(index, 1))))
     locally(box.appendChild(rowActions))
     (box, new Plate(status, tools, grant), nameInput)
-  end serverCard
 
   private def arguments(
       args: Chunk[String],
@@ -419,7 +411,6 @@ object WebClient:
       )
     )
     box
-  end arguments
 
   private def shiftArg(
       index: Int,
@@ -435,7 +426,6 @@ object WebClient:
           row.copy(args = rest.take(to) ++ Chunk(item) ++ rest.drop(to))
         case _ => row
     }
-  end shiftArg
 
   private def labeled(
       label: String,
@@ -454,7 +444,6 @@ object WebClient:
       note.textContent = Some(hint)
       locally(wrap.appendChild(note))
     (wrap, input)
-  end labeled
 
   private def formStatus(props: ConfigViewProps): String =
     props.form.toOption.flatMap(_.state.status.toOption).getOrElse("missing")
@@ -507,8 +496,6 @@ object WebClient:
           }
         case _ => None
       }
-    end if
-  end statusText
 
   private def button(text: String, action: () => Unit): dom.Element =
     val node = dom.document.createElement(dom.HtmlTag.button)
@@ -677,9 +664,6 @@ object WebClient:
               stop()
               fork(fiber.interrupt.unit)
               handle.dispose()
-        end match
-    end match
-  end mountDock
 
   private def place(seat: dom.HTMLElement, slot: dom.HTMLElement): Unit =
     if seat.isConnected then
@@ -748,7 +732,6 @@ object WebClient:
           )
           locally(bar.appendChild(node))
           if focus then node.focus()
-        end button
         button("Allow once", ConsentOutcome.AllowOnce, focus = true)
         button("Allow for this session", ConsentOutcome.AllowForSession, focus = false)
         button("Don't allow", ConsentOutcome.Rejected, focus = false)
@@ -776,7 +759,6 @@ object WebClient:
               case None        => ZIO.fail(Some(McpError.Protocol("frame event"))),
       )
     }
-  end incoming
 
   private def mountRef(props: ToolViewProps): Option[earlyeffect.dsh.apps.MountRef] =
     props.block.toOption.flatMap(_.meta.toOption).flatMap { meta =>
@@ -811,7 +793,6 @@ object WebClient:
           case None => ()
       else ()
     rest()
-  end removeButtons
 
   private def remove(node: dom.Node): Unit =
     node.parentNode.foreach { parent =>
