@@ -33,7 +33,6 @@ object CounterAppSpec extends ZIOSpecDefault:
       "method"  -> Json.Str("tools/list"),
       "params"  -> Json.Obj("_meta" -> meta),
     )
-  end listTools
 
   private def listed(json: Json): Chunk[Json.Obj] =
     json match

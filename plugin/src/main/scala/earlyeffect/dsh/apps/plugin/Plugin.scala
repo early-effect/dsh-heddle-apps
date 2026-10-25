@@ -37,8 +37,6 @@ object Plugin:
               locally(ctx.on("loader/volatile-update", value => updated(bridge, value)))
               ctx.effect(() => start(ctx, bridge), "dsh-heddle-apps")
               ()
-    end if
-  end apply
 
   private var running: Option[HostBridge] = None
 

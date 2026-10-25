@@ -15,4 +15,3 @@ enum HostFailure(val message: String):
   case MissingMount(callId: String)        extends HostFailure(s"no mounted view for $callId")
   case Stopped                             extends HostFailure("the host row stopped")
   case Protocol                            extends HostFailure("frame event")
-end HostFailure

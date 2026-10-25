@@ -12,3 +12,4 @@ object NodeEnv:
   @JSImport("node:process", JSImport.Namespace)
   private object NodeProcess extends js.Object:
     def env: js.Dictionary[String] = js.native
+end NodeEnv

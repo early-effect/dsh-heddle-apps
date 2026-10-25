@@ -68,7 +68,6 @@ object Descriptors:
     ) ++ Chunk.from(Option.when(stream)("mode" -> Json.Str("stream"))) ++
       Chunk.from(Option.when(uplink)("uplink" -> Json.Obj("codec" -> srcJson)))
     Json.Obj(fields)
-  end method
 
   private def parameter(name: String): Json =
     Json.Obj(

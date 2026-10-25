@@ -54,7 +54,6 @@ object RowReport:
       "tools"  -> Json.Arr(tools.map(Json.Str(_))),
     ) ++ grant.map(text => "grant" -> Json.Str(text))
     Json.Obj(fields)
-  end wire
 
   private def one(json: Json): Either[ReportError, RowReport] =
     json match

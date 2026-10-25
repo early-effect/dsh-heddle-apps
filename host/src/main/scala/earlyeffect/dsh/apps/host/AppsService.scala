@@ -13,3 +13,4 @@ final class AppsService(owner: js.Object, bridge: HostBridge) extends TypertRemo
   private def install(name: String, value: js.Any): Unit =
     val installed = Reflect.set(this, name, value)
     if !installed then ()
+end AppsService
